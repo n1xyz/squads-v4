@@ -188,6 +188,7 @@ impl VaultTransactionExecute {
         )
         .unwrap();
 
+        println!("Message: {:?}", message);
         let transaction = VersionedTransaction::try_new(
             VersionedMessage::V0(message),
             &[&*transaction_creator_keypair],
