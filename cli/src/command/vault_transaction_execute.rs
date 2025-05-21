@@ -15,6 +15,7 @@ use squads_multisig::pda::{
     get_ephemeral_signer_pda, get_proposal_pda, get_transaction_pda, get_vault_pda,
 };
 use squads_multisig::solana_client::nonblocking::rpc_client::RpcClient;
+use squads_multisig::solana_client::rpc_config::RpcSendTransactionConfig;
 use squads_multisig::squads_multisig_program::accounts::VaultTransactionExecute as VaultTransactionExecuteAccounts;
 use squads_multisig::squads_multisig_program::anchor_lang::ToAccountMetas;
 use squads_multisig::squads_multisig_program::instruction::VaultTransactionExecute as VaultTransactionExecuteData;
@@ -22,6 +23,9 @@ use squads_multisig::squads_multisig_program::state::VaultTransaction;
 use squads_multisig::state::VaultTransactionMessage;
 use std::str::FromStr;
 use std::time::Duration;
+use base64;
+use serde_json;
+use reqwest;
 
 use crate::utils::{create_signer_from_path, send_and_confirm_transaction};
 
@@ -52,6 +56,10 @@ pub struct VaultTransactionExecute {
 
     #[arg(long)]
     compute_unit_limit: Option<u32>,
+
+    /// Skip confirmation prompt
+    #[arg(long)]
+    no_confirm: bool,
 }
 
 impl VaultTransactionExecute {
@@ -64,6 +72,7 @@ impl VaultTransactionExecute {
             transaction_index,
             priority_fee_lamports,
             compute_unit_limit,
+            no_confirm,
         } = self;
 
         let program_id =
@@ -98,10 +107,15 @@ impl VaultTransactionExecute {
         println!("Transaction Index:       {}", transaction_index);
         println!();
 
-        let proceed = Confirm::new()
+        let proceed = if no_confirm {
+            true
+        } else {
+            Confirm::new()
             .with_prompt("Do you want to proceed?")
             .default(false)
-            .interact()?;
+                .interact()?
+        };
+
         if !proceed {
             println!("OK, aborting.");
             return Ok(());

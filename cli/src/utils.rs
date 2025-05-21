@@ -1,22 +1,43 @@
-use clap_v3::ArgMatches;
+use clap::ArgMatches;
 use colored::Colorize;
 use eyre::eyre;
-use solana_clap_v3_utils::keypair::signer_from_path;
-use solana_sdk::{signer::Signer, transaction::VersionedTransaction};
+use solana_cli_config::Config;
+use solana_sdk::{signature::{read_keypair_file, Keypair}, signer::Signer, transaction::VersionedTransaction};
 use squads_multisig::solana_client::nonblocking::rpc_client::RpcClient;
 use squads_multisig::solana_client::{
     client_error::ClientErrorKind,
     rpc_request::{RpcError, RpcResponseErrorData},
     rpc_response::RpcSimulateTransactionResult,
 };
+use std::path::Path;
 
 pub fn create_signer_from_path(
     keypair_path: String,
 ) -> Result<Box<dyn Signer>, Box<dyn std::error::Error>> {
-    let mut wallet_manager = None;
-    let matches = ArgMatches::default();
+    // Check if it's a path to a keypair file
+    if let Ok(keypair) = read_keypair_file(&keypair_path) {
+        return Ok(Box::new(keypair));
+    }
 
-    signer_from_path(&matches, &keypair_path, "Keypair", &mut wallet_manager)
+    // If it's a config path
+    if keypair_path == "config" {
+        let config_file = solana_cli_config::CONFIG_FILE.as_ref()
+            .ok_or("Failed to find default config file")?;
+        let config = Config::load(config_file).unwrap_or_default();
+        let path = Path::new(&config.keypair_path);
+        let keypair = read_keypair_file(path).map_err(|_| format!("Failed to read keypair from {}", config.keypair_path))?;
+        return Ok(Box::new(keypair));
+    }
+
+    // Default location
+    if keypair_path == "default" {
+        let home_dir = dirs::home_dir().ok_or("Failed to find home directory")?;
+        let path = home_dir.join(".config/solana/id.json");
+        let keypair = read_keypair_file(&path).map_err(|_| format!("Failed to read keypair from {}", path.display()))?;
+        return Ok(Box::new(keypair));
+    }
+
+    Err("Failed to load keypair".into())
 }
 
 pub async fn send_and_confirm_transaction(
