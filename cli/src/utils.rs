@@ -2,7 +2,7 @@ use clap::ArgMatches;
 use colored::Colorize;
 use eyre::eyre;
 use solana_cli_config::Config;
-use solana_sdk::{signature::{read_keypair_file, Keypair}, signer::Signer, transaction::VersionedTransaction};
+use solana_sdk::{signature::{read_keypair_file, Keypair, Signature}, signer::Signer, transaction::VersionedTransaction};
 use squads_multisig::solana_client::nonblocking::rpc_client::RpcClient;
 use squads_multisig::solana_client::{
     client_error::ClientErrorKind,
@@ -43,7 +43,7 @@ pub fn create_signer_from_path(
 pub async fn send_and_confirm_transaction(
     transaction: &VersionedTransaction,
     rpc_client: &RpcClient,
-) -> eyre::Result<String> {
+) -> eyre::Result<Signature> {
     // Try to send and confirm the transaction
     match rpc_client.send_and_confirm_transaction(transaction).await {
         Ok(signature) => {
@@ -51,7 +51,7 @@ pub async fn send_and_confirm_transaction(
                 "Transaction confirmed: {}\n\n",
                 signature.to_string().green()
             );
-            Ok(signature.to_string())
+            Ok(signature)
         }
         Err(err) => {
             if let ClientErrorKind::RpcError(RpcError::RpcResponseError {

@@ -185,8 +185,8 @@ impl ConfigTransactionCreate {
         let signature = send_and_confirm_transaction(&transaction, &rpc_client).await?;
 
         println!(
-            "✅ Created Config Transaction. Signature: {}",
-            signature.green()
+            "Transaction confirmed: {}\n\n",
+            signature.to_string().green()
         );
         Ok(())
     }

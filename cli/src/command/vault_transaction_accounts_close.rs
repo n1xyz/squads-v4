@@ -150,8 +150,8 @@ impl VaultTransactionAccountsClose {
         let signature = send_and_confirm_transaction(&transaction, &rpc_client).await?;
 
         println!(
-            "✅ Collected rent for transaction. Signature: {}",
-            signature.green()
+            "Transaction confirmed: {}\n\n",
+            signature.to_string().green()
         );
         Ok(())
     }

@@ -9,6 +9,7 @@ use solana_sdk::instruction::Instruction;
 use solana_sdk::message::v0::Message;
 use solana_sdk::message::VersionedMessage;
 use solana_sdk::pubkey::Pubkey;
+use solana_sdk::signature::Signature;
 use solana_sdk::transaction::VersionedTransaction;
 use squads_multisig::anchor_lang::{AccountDeserialize, InstructionData};
 use squads_multisig::pda::{
@@ -16,6 +17,7 @@ use squads_multisig::pda::{
 };
 use squads_multisig::solana_client::nonblocking::rpc_client::RpcClient;
 use squads_multisig::solana_client::rpc_config::RpcSendTransactionConfig;
+use solana_client::rpc_client::RpcClientConfig;
 use squads_multisig::squads_multisig_program::accounts::VaultTransactionExecute as VaultTransactionExecuteAccounts;
 use squads_multisig::squads_multisig_program::anchor_lang::ToAccountMetas;
 use squads_multisig::squads_multisig_program::instruction::VaultTransactionExecute as VaultTransactionExecuteData;
@@ -60,6 +62,10 @@ pub struct VaultTransactionExecute {
     /// Skip confirmation prompt
     #[arg(long)]
     no_confirm: bool,
+
+    /// Skip preflight transaction checks
+    #[arg(long)]
+    skip_preflight: bool,
 }
 
 impl VaultTransactionExecute {
@@ -73,6 +79,7 @@ impl VaultTransactionExecute {
             priority_fee_lamports,
             compute_unit_limit,
             no_confirm,
+            skip_preflight,
         } = self;
 
         let program_id =
@@ -195,11 +202,19 @@ impl VaultTransactionExecute {
         )
         .expect("Failed to create transaction");
 
-        let signature = send_and_confirm_transaction(&transaction, &rpc_client).await?;
+        let signature = if skip_preflight {
+            let config = RpcSendTransactionConfig {
+                skip_preflight,
+                ..RpcSendTransactionConfig::default()
+            };
+            rpc_client.send_transaction_with_config(&transaction, config).await?
+        } else {
+            send_and_confirm_transaction(&transaction, &rpc_client).await?
+        };
 
         println!(
             "✅ Executed Vault Transaction. Signature: {}",
-            signature.green()
+            signature.to_string().green()
         );
         Ok(())
     }

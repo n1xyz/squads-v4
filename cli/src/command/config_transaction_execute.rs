@@ -143,8 +143,8 @@ impl ConfigTransactionExecute {
         let signature = send_and_confirm_transaction(&transaction, &rpc_client).await?;
 
         println!(
-            "✅ Executed Config Transaction. Signature: {}",
-            signature.green()
+            "Transaction confirmed: {}\n\n",
+            signature.to_string().green()
         );
         Ok(())
     }

@@ -200,7 +200,7 @@ impl MultisigCreate {
         println!(
             "✅ Created Multisig: {}. Signature: {}",
             multisig_key.0,
-            signature.green()
+            signature.to_string().green()
         );
         Ok(())
     }

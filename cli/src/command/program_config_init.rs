@@ -155,9 +155,8 @@ impl ProgramConfigInit {
         let signature = send_and_confirm_transaction(&transaction, &rpc_client).await?;
 
         println!(
-            "✅ ProgramConfig Account initialized: {}. Signature: {}",
-            program_config,
-            signature.green()
+            "Transaction confirmed: {}\n\n",
+            signature.to_string().green()
         );
         Ok(())
     }

@@ -182,9 +182,8 @@ impl ProposalVote {
         let signature = send_and_confirm_transaction(&transaction, &rpc_client).await?;
 
         println!(
-            "✅ Casted {} vote. Signature: {}",
-            action,
-            signature.green()
+            "Transaction confirmed: {}\n\n",
+            signature.to_string().green()
         );
         Ok(())
     }
